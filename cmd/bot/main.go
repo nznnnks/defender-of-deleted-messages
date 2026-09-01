@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	"messagesdefender/database"
 	"os"
 
 	"github.com/joho/godotenv"
@@ -12,10 +13,12 @@ import (
 )
 
 func main() {
-	err := godotenv.Load()
-	if err != nil{
-		log.Fatal(err)
-	}
+	db, err := database.InitDB()
+	checkErr(err)
+	defer db.Close()
+
+	err = godotenv.Load()
+	checkErr(err)
 
 	token := os.Getenv("BOT_TOKEN")
 
@@ -24,8 +27,22 @@ func main() {
 	handler := tgb.HandlerFunc(func(
 		ctx context.Context,
 		update *tgb.Update,
-	) error{
-		log.Printf("%#v\n", update.Update)
+	) error {
+
+		u := update.Update
+
+		if u.BusinessMessage != nil {
+			msg := u.BusinessMessage
+			log.Println("NEW MESSAGE")
+			log.Printf("Message ID:%#v\n", msg.ID)
+			log.Printf("Text:%#v\n", msg.Text)
+		}
+
+		if u.DeletedBusinessMessages != nil {
+			log.Println("MESSAGE DELETED")
+			log.Printf("%#v\n", u.DeletedBusinessMessages)
+		}
+
 		return nil
 	})
 
@@ -33,8 +50,14 @@ func main() {
 
 	log.Println("Bot started")
 
-	if err := poller.Run(context.Background()); err != nil{
+	if err := poller.Run(context.Background()); err != nil {
 		log.Fatal(err)
 	}
 
+}
+
+func checkErr(err error) {
+	if err != nil {
+		log.Fatal(err)
+	}
 }
