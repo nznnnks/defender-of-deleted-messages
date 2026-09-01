@@ -16,6 +16,7 @@ func InitDB() (*sql.DB, error) {
 	CREATE TABLE IF NOT EXISTS messages (
 		chat_id INTEGER,
 		message_id INTEGER,
+		username TEXT,
 		text TEXT,
 		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 
