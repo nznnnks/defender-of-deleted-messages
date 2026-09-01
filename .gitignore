@@ -1,0 +1,46 @@
+# Секреты
+.env
+.env.*
+
+# База данных
+*.db
+*.sqlite
+*.sqlite3
+
+# Скомпилированные файлы Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Тестовые бинарники
+*.test
+
+# Профилирование
+*.prof
+*.out
+
+# Логи
+*.log
+logs/
+
+# Кэш Go
+.coverprofile
+
+# VS Code
+.vscode/
+
+# JetBrains IDE
+.idea/
+
+# Windows
+Thumbs.db
+Desktop.ini
+
+# macOS
+.DS_Store
+
+# Временные файлы
+tmp/
+temp/
