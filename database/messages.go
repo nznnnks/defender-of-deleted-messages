@@ -10,14 +10,20 @@ func SaveMessage(
 	messageID int,
 	username string,
 	text string,
+	mediaType string,
+	fileID string,
+	caption string,
 ) error {
 	_, err := db.Exec(
-		`INSERT INTO messages(chat_id, message_id, username, text)
-		VALUES (?, ?, ?, ?)`,
+		`INSERT INTO messages(chat_id, message_id, username, text, mediaType, fileID, caption)
+		VALUES (?, ?, ?, ?, ?, ?, ?)`,
 		chatID,
 		messageID,
 		username,
 		text,
+		mediaType,
+		fileID,
+		caption,
 	)
 
 	return err
@@ -27,24 +33,38 @@ func GetMessage(
 	db *sql.DB,
 	chatID int64,
 	messageID int,
-) (string, string,  error) {
+) (string, //username
+	string, //text
+	string, //mediaType
+	string, //fileID
+	string, //caption
+	error,
+) {
 	var username string
 	var text string
+	var mediaType string
+	var fileID string
+	var caption string
 
 	err := db.QueryRow(
-		`SELECT text
+		`SELECT username, text, mediaType, fileID, caption
 		FROM messages
 		WHERE chat_id = ?
 		AND message_id = ?`,
 		chatID,
 		messageID,
-	).Scan(&username, &text)
+	).Scan(&username,
+		&text,
+		&mediaType,
+		&fileID,
+		&caption,
+	)
 
 	if err != nil {
-		return "", "", err
+		return "", "", "", "", "", err
 	}
 
-	return username, text, nil
+	return username, text, mediaType, fileID, caption, nil
 }
 
 func UpdateMessage(

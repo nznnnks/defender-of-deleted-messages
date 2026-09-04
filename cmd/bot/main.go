@@ -51,7 +51,6 @@ func main() {
 		if u.BusinessMessage != nil {
 			msg := u.BusinessMessage
 
-			//ОТДЕЛЬНАЯ ФУНКЦИЯ
 			displayName := ""
 
 			if msg.From != nil {
@@ -62,28 +61,46 @@ func main() {
 				}
 			}
 
+			mediaType := "text"
+			fileID := ""
+			caption := ""
+
+			if len(msg.Photo) > 0 {
+				mediaType = "photo"
+
+				photo := msg.Photo[len(msg.Photo)-1]
+
+				fileID = string(photo.FileID)
+				caption = msg.Caption
+			}
+
 			err := database.SaveMessage(
 				db,
 				int64(msg.Chat.ID),
 				msg.ID,
 				displayName,
 				msg.Text,
+				mediaType,
+				fileID,
+				caption,
 			)
 
 			if err != nil {
 				log.Print(err)
 			}
 			log.Println("NEW MESSAGE")
+			log.Printf("%+v\n", *msg)
 			log.Printf("Message ID:%#v\n", msg.ID)
 			log.Printf("Text:%#v\n", msg.Text)
 		}
 
+		//УДАЛЕНО СОО
 		if u.DeletedBusinessMessages != nil {
 
 			del := u.DeletedBusinessMessages
 
 			for _, messageID := range del.MessageIDs {
-				username, text, err := database.GetMessage(
+				username, text, mediaType, fileID, capiton, err := database.GetMessage(
 					db,
 					int64(del.Chat.ID),
 					messageID,
@@ -94,40 +111,64 @@ func main() {
 					continue
 				}
 
-				notification := fmt.Sprintf(
-					"🗑️ Сообщение было удалено пользователем %s\n\nТекст:\n%s",
-					username,
-					text,
-				)
+				notification := ""
 
-				err = client.SendMessage(
-					tg.ChatID(chatID),
-					notification,
-				).DoVoid(ctx)
+				if mediaType == "photo" {
+					log.Printf("Deleted photo: %s", fileID)
+					notification = fmt.Sprintf(
+						"🗑️ Фото удалено пользователем %s\n\n%s",
+						username,
+						capiton,
+					)
 
-				if err != nil {
-					log.Println(err)
+					err = client.SendMessage(
+						tg.ChatID(chatID),
+						notification,
+					).DoVoid(ctx)
+
+					if err != nil {
+						log.Println(err)
+					}
+
+					err = client.SendPhoto(
+						tg.ChatID(chatID),
+						tg.FileArg{
+							FileID: tg.FileID(fileID),
+						},
+					).DoVoid(ctx)
+
+				} else {
+					notification = fmt.Sprintf(
+						"🗑️ Сообщение удалено пользователем %s\n\n%s",
+						username,
+						text,
+					)
+
+					err = client.SendMessage(
+						tg.ChatID(chatID),
+						notification,
+					).DoVoid(ctx)
+
+					if err != nil {
+						log.Println(err)
+					}
 				}
 
 				log.Printf("Deleted message: %s", text)
 			}
 		}
 
+		//ИСПРАВЛЕНО СОО
 		if u.EditedBusinessMessage != nil {
 
 			msg := u.EditedBusinessMessage
-			username := msg.From.Username
 
-			if username == "" {
-				username = tg.Username(msg.From.FirstName)
-			}
-
-			//ИСПРАВИТЬ ЮЗЕРНЕЙМ
-			oldText, err := database.GetMessage(
+			username, oldText, mediaType, fileID, capiton, err := database.GetMessage(
 				db,
 				int64(msg.Chat.ID),
 				msg.ID,
 			)
+
 			if err != nil {
 				log.Println(err)
 				return nil
@@ -135,20 +176,52 @@ func main() {
 
 			newText := msg.Text
 
+			notification := ""
+
 			if oldText != newText {
-				notification := fmt.Sprintf("✏️ Сообщение изменено пользователем %s\n\nБыло:\n%s\n\nСтало\n%s",
-					username,
-					oldText,
-					newText,
-				)
 
-				err = client.SendMessage(
-					tg.ChatID(chatID),
-					notification,
-				).DoVoid(ctx)
+				if mediaType == "photo" {
+					log.Printf("Deleted photo: %s", fileID)
+					notification = fmt.Sprintf(
+						"🗑️ Фото изменено пользователем %s\n\n%s",
+						username,
+						capiton,
+					)
 
-				if err != nil {
-					log.Println(err)
+					err = client.SendMessage(
+						tg.ChatID(chatID),
+						notification,
+					).DoVoid(ctx)
+
+					if err != nil {
+						log.Println(err)
+					}
+
+					err = client.SendPhoto(
+						tg.ChatID(chatID),
+						tg.FileArg{
+							FileID: tg.FileID(fileID),
+						},
+					).DoVoid(ctx)
+
+					if err != nil {
+						log.Println(err)
+					}
+				} else {
+					notification = fmt.Sprintf("✏️ Сообщение изменено пользователем %s\n\n%s\n\n%s",
+						username,
+						oldText,
+						newText,
+					)
+
+					err = client.SendMessage(
+						tg.ChatID(chatID),
+						notification,
+					).DoVoid(ctx)
+
+					if err != nil {
+						log.Println(err)
+					}
 				}
 
 				err = database.UpdateMessage(

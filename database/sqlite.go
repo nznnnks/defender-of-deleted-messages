@@ -18,6 +18,11 @@ func InitDB() (*sql.DB, error) {
 		message_id INTEGER,
 		username TEXT,
 		text TEXT,
+
+		mediaType TEXT,
+		fileID TEXT,
+		caption TEXT, 
+		
 		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 
 		PRIMARY KEY(chat_id, message_id)
