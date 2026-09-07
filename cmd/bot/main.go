@@ -113,7 +113,8 @@ func main() {
 
 				notification := ""
 
-				if mediaType == "photo" {
+				switch mediaType {
+				case "photo":
 					log.Printf("Deleted photo: %s", fileID)
 					notification = fmt.Sprintf(
 						"🗑️ Фото удалено пользователем %s\n\n%s",
@@ -136,8 +137,30 @@ func main() {
 							FileID: tg.FileID(fileID),
 						},
 					).DoVoid(ctx)
+				case "video":
+					log.Printf("Deleted video: %s", fileID)
+					notification = fmt.Sprintf(
+						"🗑️ Видео удалено пользователем %s\n\n%s",
+						username,
+						capiton,
+					)
 
-				} else {
+					err = client.SendMessage(
+						tg.ChatID(chatID),
+						notification,
+					).DoVoid(ctx)
+
+					if err != nil {
+						log.Println(err)
+					}
+
+					err = client.SendVideo(
+						tg.ChatID(chatID),
+						tg.FileArg{
+							FileID: tg.FileID(fileID),
+						},
+					).DoVoid(ctx)
+				default:
 					notification = fmt.Sprintf(
 						"🗑️ Сообщение удалено пользователем %s\n\n%s",
 						username,
@@ -152,9 +175,8 @@ func main() {
 					if err != nil {
 						log.Println(err)
 					}
-				}
 
-				log.Printf("Deleted message: %s", text)
+				}
 			}
 		}
 
@@ -180,10 +202,11 @@ func main() {
 
 			if oldText != newText {
 
-				if mediaType == "photo" {
-					log.Printf("Deleted photo: %s", fileID)
+				switch mediaType {
+				case "photo":
+					log.Printf("Change photo: %s", fileID)
 					notification = fmt.Sprintf(
-						"🗑️ Фото изменено пользователем %s\n\n%s",
+						"✏️ Фото изменено пользователем %s\n\n%s",
 						username,
 						capiton,
 					)
@@ -207,7 +230,35 @@ func main() {
 					if err != nil {
 						log.Println(err)
 					}
-				} else {
+				case "video":
+					log.Printf("Change video: %s", fileID)
+					notification = fmt.Sprintf(
+						"✏️ Видео изменено пользователем %s\n\n%s",
+						username,
+						capiton,
+					)
+
+					err = client.SendMessage(
+						tg.ChatID(chatID),
+						notification,
+					).DoVoid(ctx)
+
+					if err != nil {
+						log.Println(err)
+					}
+
+					err = client.SendVideo(
+						tg.ChatID(chatID),
+						tg.FileArg{
+							FileID: tg.FileID(fileID),
+						},
+					).DoVoid(ctx)
+
+					if err != nil {
+						log.Println(err)
+					}
+
+				default:
 					notification = fmt.Sprintf("✏️ Сообщение изменено пользователем %s\n\n%s\n\n%s",
 						username,
 						oldText,
@@ -223,7 +274,6 @@ func main() {
 						log.Println(err)
 					}
 				}
-
 				err = database.UpdateMessage(
 					db,
 					int64(msg.Chat.ID),
