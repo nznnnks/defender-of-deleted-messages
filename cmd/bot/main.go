@@ -74,6 +74,24 @@ func main() {
 				caption = msg.Caption
 			}
 
+			if msg.Video != nil {
+				mediaType = "video"
+
+				video := msg.Video
+
+				fileID = string(video.FileID)
+				caption = msg.Caption
+			}
+
+			if msg.Sticker != nil {
+				mediaType = "sticker"
+
+				sticker := msg.Sticker
+
+				fileID = string(sticker.FileID)
+				caption = msg.Caption
+			}
+
 			err := database.SaveMessage(
 				db,
 				int64(msg.Chat.ID),
@@ -155,6 +173,30 @@ func main() {
 					}
 
 					err = client.SendVideo(
+						tg.ChatID(chatID),
+						tg.FileArg{
+							FileID: tg.FileID(fileID),
+						},
+					).DoVoid(ctx)
+
+				case "sticker":
+					log.Printf("Deleted sticker: %s", fileID)
+					notification = fmt.Sprintf(
+						"🗑️ Стикер удален пользователем %s\n\n%s",
+						username,
+						capiton,
+					)
+
+					err = client.SendMessage(
+						tg.ChatID(chatID),
+						notification,
+					).DoVoid(ctx)
+
+					if err != nil {
+						log.Println(err)
+					}
+
+					err = client.SendSticker(
 						tg.ChatID(chatID),
 						tg.FileArg{
 							FileID: tg.FileID(fileID),
@@ -248,6 +290,34 @@ func main() {
 					}
 
 					err = client.SendVideo(
+						tg.ChatID(chatID),
+						tg.FileArg{
+							FileID: tg.FileID(fileID),
+						},
+					).DoVoid(ctx)
+
+					if err != nil {
+						log.Println(err)
+					}
+
+				case "sticker":
+					log.Printf("Change sticker: %s", fileID)
+					notification = fmt.Sprintf(
+						"✏️ Стикер изменен пользователем %s\n\n%s",
+						username,
+						capiton,
+					)
+
+					err = client.SendMessage(
+						tg.ChatID(chatID),
+						notification,
+					).DoVoid(ctx)
+
+					if err != nil {
+						log.Println(err)
+					}
+
+					err = client.SendSticker(
 						tg.ChatID(chatID),
 						tg.FileArg{
 							FileID: tg.FileID(fileID),
